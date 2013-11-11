@@ -1,27 +1,14 @@
-var db = openDatabase('mydb', '1.0', 'Test DB', 5000);
-db.transaction(function (tx) {
-   tx.executeSql('CREATE TABLE Nodes (id primary key, lat, lon)');
-});
+var db = openDatabase('mydb', '1.0', 'Test DB', 1500);
+function sqlCommand(command){
+  db.transaction(function (transaction) {
+    transaction.executeSql(command);
+  });
+}
 
-db.transaction(function (tx) {
-   tx.executeSql('DELETE FROM Nodes');
-});
-
-db.transaction(function (tx) {
-   tx.executeSql('CREATE TABLE Ways (id primary key, highway, oneway)');
-});
-
-db.transaction(function (tx) {
-   tx.executeSql('DELETE FROM Ways');
-});
-
-db.transaction(function (tx) {
-   tx.executeSql('CREATE TABLE Include (way_id, node_id, primary key(way_id, node_id))');
-});
-
-db.transaction(function (tx) {
-   tx.executeSql('DELETE FROM Include');
-});
+sqlCommand('CREATE TABLE Nodes (id primary key, lat, lon)');
+sqlCommand('DELETE FROM Nodes');
+sqlCommand('CREATE TABLE Path ([from], [to], primary key([from], [to]))');
+sqlCommand('DELETE FROM Path');
   
 function f_ok(tx, result){
   console.log(result);
@@ -29,6 +16,19 @@ function f_ok(tx, result){
 
 function f_err(tx, result){
   console.log(result);
+}
+
+function insertPath(from, to){
+  db.transaction(function (transaction) {
+    console.log(from + " > " + to)
+    transaction.executeSql("INSERT INTO Path ([from], [to]) VALUES (?, ?)", [from, to]);
+  });
+}
+
+function insertNode(id, lat, lon){
+  db.transaction(function (transaction, f_ok, f_err) {
+    transaction.executeSql("INSERT INTO Nodes (id, lat, lon) VALUES (?, ?, ?)", [id, lat, lon]);
+  });  
 }
 
 function myFunc(){
@@ -39,10 +39,7 @@ function myFunc(){
           var id = $(this).attr("id");
           var lat = $(this).attr("lat");
           var lon = $(this).attr("lon");
-          
-          db.transaction(function (transaction, f_ok, f_err) {
-              transaction.executeSql("INSERT INTO Nodes (id, lat, lon) VALUES (?, ?, ?)", [id, lat, lon]);
-          });  
+          insertNode(id, lat, lon);
         });
         
         $(xml).find('way').each(function(){
@@ -56,16 +53,17 @@ function myFunc(){
             if(k == "oneway") oneway = true;
           });
           
+          var prevNodeId = null;
+          
           $(this).find('nd').each(function(){
             var nodeId = $(this).attr("ref");
-            
-            db.transaction(function (transaction) {
-                transaction.executeSql("INSERT INTO Include (way_id, node_id) VALUES (?, ?)", [id, nodeId]);
-            });  
-          });
-          
-          db.transaction(function (transaction) {
-              transaction.executeSql("INSERT INTO Ways (id, highway, oneway) VALUES (?, ?, ?)", [id, highway, oneway]);
+            if(prevNodeId != null){
+              insertPath(prevNodeId, nodeId);
+              if(oneway == false){
+                insertPath(nodeId, prevNodeId);
+              }
+            }
+            prevNodeId = nodeId;
           });
         });
         
