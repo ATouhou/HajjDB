@@ -1,7 +1,10 @@
 var db = openDatabase('mydb', '1.0', 'Test DB', 5000);
 db.transaction(function (tx) {
    tx.executeSql('CREATE TABLE Nodes (id primary key, lat, lon)');
-   tx.executeSql('DROP TABLE Nods');
+});
+
+db.transaction(function (tx) {
+   tx.executeSql('DELETE FROM Nodes');
 });
 
 db.transaction(function (tx) {
@@ -9,9 +12,17 @@ db.transaction(function (tx) {
 });
 
 db.transaction(function (tx) {
+   tx.executeSql('DELETE FROM Ways');
+});
+
+db.transaction(function (tx) {
    tx.executeSql('CREATE TABLE Include (way_id, node_id, primary key(way_id, node_id))');
 });
 
+db.transaction(function (tx) {
+   tx.executeSql('DELETE FROM Include');
+});
+  
 function f_ok(tx, result){
   console.log(result);
 }
@@ -42,16 +53,11 @@ function myFunc(){
           $(this).find('tag').each(function(){
             var k = $(this).attr("k");
             if(k == "highway") highway = $(this).attr("v");
-          });
-          
-          $(this).find('oneway').each(function(){
-            var k = $(this).attr("k");
             if(k == "oneway") oneway = true;
           });
           
-          var nodeId;
-          $(this).find('node').each(function(){
-            nodeId = $(this).attr("id");
+          $(this).find('nd').each(function(){
+            var nodeId = $(this).attr("ref");
             
             db.transaction(function (transaction) {
                 transaction.executeSql("INSERT INTO Include (way_id, node_id) VALUES (?, ?)", [id, nodeId]);
