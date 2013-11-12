@@ -9,7 +9,7 @@ sqlCommand('CREATE TABLE Nodes (id primary key, lat, lon)');
 sqlCommand('DELETE FROM Nodes');
 sqlCommand('CREATE TABLE Path ([from], [to], primary key([from], [to]))');
 sqlCommand('DELETE FROM Path');
-  
+
 function f_ok(tx, result){
   console.log(result);
 }
@@ -33,13 +33,18 @@ function insertNode(id, lat, lon){
 
 function myFunc(){
   $.ajax({
-    type: "GET", url: "maps/map.xml", dataType: "xml",
+    type: "GET", url: "maps/map2.xml", dataType: "xml",
       success: function(xml) {
+	  
+		console.log("AJAX Success");
+		console.log("Inserting Nodes");
+	  
         $(xml).find('node').each(function(){
           var id = $(this).attr("id");
           var lat = $(this).attr("lat");
           var lon = $(this).attr("lon");
           insertNode(id, lat, lon);
+		  console.log("Inserting Node...");
         });
         
         $(xml).find('way').each(function(){
@@ -65,6 +70,7 @@ function myFunc(){
             }
             prevNodeId = nodeId;
           });
+		  console.log("Inserting Way...");
         });
         
       },
